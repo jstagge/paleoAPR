@@ -145,7 +145,18 @@ paleo.fit <- function(method, reconst_data, annual_norm=NULL, monthly_norm=NULL,
 }
 
 
-### Return coefficients
+#' Generic No documentation
+#'
+#' This function needs documentation.
+#'
+#' @param data A dataframe
+#' @param write_folder Folder in which to save results
+#' @param write_file Name of file to be saved
+#'
+#' @return p Plot
+#'
+#'
+#' @export
 coef.paleo.fit <- function(fit, ...) {
 	if (fit$method == "ap") {
 		coef_mat <-  matrix(rep(1,12),1, 12)
