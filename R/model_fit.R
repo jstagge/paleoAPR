@@ -48,15 +48,7 @@ fit_model <- function(method, regmethod="lm", reconst_data, annual_norm=NULL, mo
 		monthly_ts <- merge(monthly_ts, flow_ts, all.x=TRUE)
 		### Rename flow column to annual recon
 		names(monthly_ts)[which(names(monthly_ts) == "flow")] <- "annual_recon"
-	
-		### Merge observed flows and month
-		monthly_obs_ts_df <- monthly_obs$ts
-		names(monthly_obs_ts_df)[which(names(monthly_obs_ts_df) == "flow")] <- "obs_flow"
- 		monthly_obs_ts_df$obs_norm <- flow_to_norm(flow_series=monthly_obs, dist_object=monthly_norm)	
-
-		### Merge annual flows and month
-		monthly_ts <- merge(monthly_ts, monthly_obs_ts_df, all.x=TRUE)
-			
+				
 		### Re-sort to obtain time series
 		monthly_ts <- monthly_ts[with(monthly_ts, order(t)), ]
 
@@ -74,6 +66,15 @@ fit_model <- function(method, regmethod="lm", reconst_data, annual_norm=NULL, mo
 		
 		### For APR model
 		} else if (method == "apr") {
+			
+			### Merge observed flows and month
+			monthly_obs_ts_df <- monthly_obs$ts
+			names(monthly_obs_ts_df)[which(names(monthly_obs_ts_df) == "flow")] <- "obs_flow"
+ 			monthly_obs_ts_df$obs_norm <- flow_to_norm(flow_series=monthly_obs, dist_object=monthly_norm)	
+
+			### Merge annual flows and month
+			monthly_ts <- merge(monthly_ts, monthly_obs_ts_df, all.x=TRUE)
+		
 			### Merge predictors
 			for (j in seq(1,length(pred_ts))) {
 				monthly_ts <- merge(monthly_ts, pred_ts[[j]]$ts, all.x=TRUE)
@@ -126,7 +127,7 @@ flow_reconstr <- function(recon_model, post_proc=FALSE, interpolate=FALSE){
 	
 		if (method == "ap") {
 			recon_ts <- recon_model$reconst_data
-			recon_ts$ts$norm_est <- recon_ts$ts$norm_est$annual_norm
+			recon_ts$ts$norm_est <- recon_ts$ts$annual_norm
 		} else if (method == "apr") {
 			recon_ts <- apr_reconst(recon_model=recon_model)
 		}
@@ -137,15 +138,19 @@ flow_reconstr <- function(recon_model, post_proc=FALSE, interpolate=FALSE){
 			ref_period <- recon_model$monthly_norm$ref_period		
 			ref_test <- recon_ts$ts$year >= ref_period[[1]] & recon_ts$ts$year <= ref_period[[2]]
 						
+			mean_ref <- rep(NA, 12)
+			sd_ref <- rep(NA, 12)
+									
 			for (j in seq(1,12)){
 				### Set reference period and monthly test
 				month_test <- recon_ts$ts$month == j
 				ref_month_test <- ref_test & month_test
 				### Extract the mean and standard deviation for norm estimate of each month wihin the refernce period
-				mean_ref <- mean(recon_ts$ts$norm_est[ref_month_test], na.rm=TRUE)
-				sd_ref <- sd(recon_ts$ts$norm_est[ref_month_test], na.rm=TRUE)
+				mean_ref[j] <- mean(recon_ts$ts$norm_est[ref_month_test], na.rm=TRUE)
+				sd_ref[j] <- sd(recon_ts$ts$norm_est[ref_month_test], na.rm=TRUE)
 				### Apply this to the entire time series within the month
-				recon_ts$ts$norm_est[month_test] <- qnorm(pnorm(recon_ts$ts$norm_est[month_test], mean_ref, sd_ref))
+				recon_ts$ts$norm_est[month_test] <- qnorm(pnorm(recon_ts$ts$norm_est[month_test], mean_ref[j], sd_ref[j]))
+				recon_ts$post_proc <- list(mean=mean_ref, sd=sd_ref)
 			}	
 		}
 		

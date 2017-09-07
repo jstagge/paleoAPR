@@ -145,3 +145,20 @@ paleo.fit <- function(method, reconst_data, annual_norm=NULL, monthly_norm=NULL,
 }
 
 
+### Return coefficients
+coef.paleo.fit <- function(fit, ...) {
+	if (fit$method == "ap") {
+		coef_mat <-  matrix(rep(1,12),1, 12)
+		rownames(coef_mat) <- "annual_norm" 
+	} else if (fit$method == "apr") {
+		coef_mat <- sapply(fit$reg_model, function(x) coef(x))
+		coef_mat <- as.matrix(coef_mat)
+	}
+	
+	colnames(coef_mat) <- paste0("M_", seq(1,12))
+	return(coef_mat)
+}
+
+
+
+
