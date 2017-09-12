@@ -1,8 +1,8 @@
-# paleoAPR for R
+# paleoAPR: Monthly Streamflow Reconstructions Package for R
 
 [![DOI](https://zenodo.org/badge/102071023.svg)](https://zenodo.org/badge/latestdoi/102071023)
 
-This repository contains code for the paleoAPR application, designed for use in the R environment to generate monthly streamflow reconstructions from annual tree-ring chronologies.  
+This repository contains code for the paleoAPR package, designed for use in the R environment to generate monthly streamflow reconstructions from annual tree-ring chronologies.  
 
 
 ### Prerequisites
@@ -25,9 +25,7 @@ install_github("jstagge/paleoAPR")
 
 For any description of this package or use of this code, please use the following citation:
 
-* Stagge, J.H. (2017) "paleoAPR: Monthly Streamflow Reconstructions." DOI: 10.5281/zenodo.889892.
-
--->
+* Stagge, J.H. (2017) "paleoAPR: Monthly Streamflow Reconstructions." R Package. DOI: 10.5281/zenodo.889892.
 
 ## Authors
 
