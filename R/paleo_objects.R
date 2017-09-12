@@ -127,11 +127,11 @@ plot.paleo.norm <- function(x, ...) {
 #'
 #'
 #' @export
-paleo.fit <- function(method, reconst_data, annual_norm=NULL, monthly_norm=NULL, first_month_wy=10, reg_eq=NULL, pred_ts=NULL){
+paleo.fit <- function(method, reconst_data, annual_norm=NULL, monthly_norm=NULL, first_month_wy=10, reg_eq=NULL, pred_ts=NULL, mf_prop=NULL){
 	x <- list(method=method, reconst_data=reconst_data, first_month_wy=first_month_wy)
 	
 	if(method == "mf"){
-		model_list <- list()	
+		model_list <- list(mf_prop = mf_prop)	
 	} else if (method == "ap") {
 		model_list <- list(annual_norm=annual_norm, monthly_norm=monthly_norm)
 	} else if (method == "apr") {
@@ -158,7 +158,10 @@ paleo.fit <- function(method, reconst_data, annual_norm=NULL, monthly_norm=NULL,
 #'
 #' @export
 coef.paleo.fit <- function(fit, ...) {
-	if (fit$method == "ap") {
+	if (fit$method == "mf") {
+		coef_mat <- matrix(fit$mf_prop$prop_mean,1,12)
+		rownames(coef_mat) <- "mf_fraction" 
+	} else if (fit$method == "ap") {
 		coef_mat <-  matrix(rep(1,12),1, 12)
 		rownames(coef_mat) <- "annual_norm" 
 	} else if (fit$method == "apr") {

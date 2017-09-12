@@ -13,20 +13,12 @@
 ### Generic wrapper for fitting model
 fit_model <- function(method, regmethod="lm", reconst_data, annual_norm=NULL, monthly_norm=NULL, pred_ts=NULL, reg_eq=NULL, monthly_obs=NULL,...){
 
-	if(method == "mf"){
-		
-	} 
-	else if (method == "ap" | method == "apr") {
-		### Check that annual reconstructed timeseries and normalization are from same data
-		expect_that(annual_norm$prefix, is_identical_to(paste0(reconst_data$site_prefix, "_annual")))
-		
-		### Process object
+	################################################
+	### Process Reconstructed time series
+	#################################################	
 		flow_ts <- reconst_data$ts  
 		### Test if the reconstruction uses calendar years
 		are_cal_years <- is.null(reconst_data$wy_first_month)
-
- 		### Calculate normalized annual flow
- 		flow_ts$annual_norm <- flow_to_norm(flow_series=reconst_data, dist_object=annual_norm)	
 
 		### Create a monthly time series of all combinations of months and year
 		### For calendar years, need the range of years and 12 months
@@ -40,9 +32,47 @@ fit_model <- function(method, regmethod="lm", reconst_data, annual_norm=NULL, mo
 			monthly_ts <- expand.grid(month = seq(1,12), year = seq(year_range[1], year_range[2]))
 			monthly_ts$water_year <- usgs_wateryear(monthly_ts$year, monthly_ts$month, reconst_data$wy_first_month)
 		}
-		
+
 		### Set an order column to allow easier resorting at the end
-		monthly_ts$t <- seq(1,dim(monthly_ts)[1])
+		monthly_ts$t <- seq(1,dim(monthly_ts)[1])		
+
+	################################################
+	### Begin to fit model
+	#################################################			
+	if(method == "mf"){
+
+		### Merge annual flows and month
+		monthly_ts <- merge(monthly_ts, flow_ts, all.x=TRUE)
+		### Rename flow column to annual recon
+		names(monthly_ts)[which(names(monthly_ts) == "flow")] <- "annual_recon"
+				
+		### Re-sort to obtain time series
+		monthly_ts <- monthly_ts[with(monthly_ts, order(t)), ]
+
+		### Process observed flow
+		obs_ts <- monthly_obs$ts  
+
+		### Test if the reconstruction uses calendar years
+		are_cal_years <- is.null(reconst_data$wy_first_month)
+
+		### Run the MF model
+		if(are_cal_years == TRUE) {
+			mf_prop <- mf_fit(obs_ts=obs_ts, wy_first_month=1)
+		} else {
+			mf_prop <- mf_fit(obs_ts=obs_ts, wy_first_month=reconst_data$wy_first_month)
+		}
+			
+		### Prepare to return fit object
+		x <- paleo.fit(method=method, reconst_data=reconst_data, mf_prop=mf_prop)			
+		x$reconst_data$ts <- monthly_ts
+		x$reconst_data$time_scale <- "monthly"
+	} 
+	else if (method == "ap" | method == "apr") {
+		### Check that annual reconstructed timeseries and normalization are from same data
+		expect_that(annual_norm$prefix, is_identical_to(paste0(reconst_data$site_prefix, "_annual")))
+		
+ 		### Calculate normalized annual flow
+ 		flow_ts$annual_norm <- flow_to_norm(flow_series=reconst_data, dist_object=annual_norm)	
 		
 		### Merge annual flows and month
 		monthly_ts <- merge(monthly_ts, flow_ts, all.x=TRUE)
@@ -121,8 +151,20 @@ flow_reconstr <- function(recon_model, post_proc=FALSE, interpolate=FALSE){
 	site_prefix <- recon_model$reconst_data$site_prefix
 	
 	if(method == "mf"){
+		recon_ts <- recon_model$reconst_data
 		
+		### Merge with MF proportion
+		mf_ts <- merge(recon_ts$ts, recon_model$mf_prop, by="month", all.x=TRUE)
+		### Multiply monthly fraction by annual reconstruction * 12
+		mf_ts$flow_est <- mf_ts$prop_mean * mf_ts$annual_recon*12
+		### Re-sort to obtain time series
+		mf_ts <- mf_ts[with(mf_ts, order(t)), ]
 		
+		recon_ts$ts <- mf_ts
+		
+		### Create object to return
+		monthly_rec_ts <- paleo.ts(ts=recon_ts, time_scale="monthly", site_prefix=site_prefix, wy_first_month=recon_model$first_month_wy, method=method)
+			
 	} else if (method == "ap" | method == "apr") {	
 	
 		if (method == "ap") {
@@ -168,6 +210,69 @@ flow_reconstr <- function(recon_model, post_proc=FALSE, interpolate=FALSE){
 	}
 	
 return(monthly_rec_ts)
+}
+
+
+
+
+ 
+#' Generic No documentation
+#'
+#' This function needs documentation.
+#'
+#' @param data A dataframe
+#' @param write_folder Folder in which to save results
+#' @param write_file Name of file to be saved
+#'
+#' @return p Plot
+#'
+#'
+#' @export
+mf_fit <- function(obs_ts, wy_first_month=1) {
+require(data.table)
+
+### Add a water year column
+obs_ts$water_year <- usgs_wateryear(obs_ts$year, obs_ts$month, wy_first_month)
+
+################################################
+### Calculate Annual Flow
+#################################################
+obs_ts <- data.table(obs_ts)
+
+### Calculate flow by water year 
+flow_obs_annual <- obs_ts[,list(annual_sum=sum(flow), annual_mean=mean(flow)),by="water_year"]
+### Merge back with observed flow
+obs_ts <-  merge(obs_ts,flow_obs_annual, by=c("water_year"), all.x = T)
+	
+
+################################################
+### Calculate Monthly Fraction
+#################################################
+mf_ts <- obs_ts
+
+### Only consider those water years with 12 months of data, so first sum months with flows greater than 0.  Negative flows will confuse the proportion method.
+months_by_wy <- mf_ts[,list(count_months=sum(flow>0, na.rm=TRUE)), by=water_year]
+	
+### Determine full water years and subset null_dt to only full years 
+full_wys <- months_by_wy$water_year[months_by_wy$count_months==12]
+mf_ts <- mf_ts[mf_ts$water_year %in% full_wys,]
+
+### Calculate monthly proportion 
+mf_ts$prop_month <- mf_ts$flow/mf_ts$annual_sum
+
+### Summarize null_dt by calculating the mean and median proportion across all years
+null_prop <- mf_ts[,list(prop_mean=mean(prop_month, na.rm=TRUE)), by=month] 
+
+### Rescale so that months always add up to 1
+null_prop$prop_mean <- null_prop$prop_mean/sum(null_prop$prop_mean)
+null_prop <- data.frame(null_prop)
+
+### Re-sort by months
+null_prop <- null_prop[order(null_prop$month),]
+
+### Return monthly proportion
+return(null_prop)
+
 }
 
 
