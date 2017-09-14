@@ -9,6 +9,8 @@
 #' @return p Plot
 #'
 #'
+#' @import data.table
+#'
 #' @export
 ### Generic wrapper for fitting model
 fit_model <- function(method, regmethod="lm", reconst_data, annual_norm=NULL, monthly_norm=NULL, pred_ts=NULL, reg_eq=NULL, monthly_obs=NULL,...){
@@ -46,7 +48,7 @@ fit_model <- function(method, regmethod="lm", reconst_data, annual_norm=NULL, mo
 		### Rename flow column to annual recon
 		names(monthly_ts)[which(names(monthly_ts) == "flow")] <- "annual_recon"
 		
-			### Re-sort to obtain time series
+		### Re-sort to obtain time series
 		monthly_ts <- monthly_ts[with(monthly_ts, order(t)), ]
 
 		### Process observed flow
