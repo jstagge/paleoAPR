@@ -45,8 +45,8 @@ fit_model <- function(method, regmethod="lm", reconst_data, annual_norm=NULL, mo
 		monthly_ts <- merge(monthly_ts, flow_ts, all.x=TRUE)
 		### Rename flow column to annual recon
 		names(monthly_ts)[which(names(monthly_ts) == "flow")] <- "annual_recon"
-				
-		### Re-sort to obtain time series
+		
+			### Re-sort to obtain time series
 		monthly_ts <- monthly_ts[with(monthly_ts, order(t)), ]
 
 		### Process observed flow
@@ -66,6 +66,7 @@ fit_model <- function(method, regmethod="lm", reconst_data, annual_norm=NULL, mo
 		x <- paleo.fit(method=method, reconst_data=reconst_data, mf_prop=mf_prop)			
 		x$reconst_data$ts <- monthly_ts
 		x$reconst_data$time_scale <- "monthly"
+		
 	} 
 	else if (method == "ap" | method == "apr") {
 		### Check that annual reconstructed timeseries and normalization are from same data
@@ -228,6 +229,7 @@ return(monthly_rec_ts)
 #'
 #'
 #' @export
+
 mf_fit <- function(obs_ts, wy_first_month=1) {
 require(data.table)
 
