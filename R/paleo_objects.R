@@ -159,7 +159,7 @@ paleo.fit <- function(method, reconst_data, annual_norm=NULL, monthly_norm=NULL,
 #' @export
 coef.paleo.fit <- function(fit, ...) {
 	if (fit$method == "mf") {
-		coef_mat <- matrix(fit$mf_prop$prop_mean,1,12)
+		coef_mat <- matrix(fit$mf_prop$prop_mean$prop_mean,1,12)
 		rownames(coef_mat) <- "mf_fraction" 
 	} else if (fit$method == "ap") {
 		coef_mat <-  matrix(rep(1,12),1, 12)

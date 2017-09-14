@@ -154,7 +154,7 @@ flow_reconstr <- function(recon_model, post_proc=FALSE, interpolate=FALSE){
 		recon_ts <- recon_model$reconst_data
 		
 		### Merge with MF proportion
-		mf_ts <- merge(recon_ts$ts, recon_model$mf_prop, by="month", all.x=TRUE)
+		mf_ts <- merge(recon_ts$ts, recon_model$mf_prop$prop_mean, by="month", all.x=TRUE)
 		### Multiply monthly fraction by annual reconstruction * 12
 		mf_ts$flow_est <- mf_ts$prop_mean * mf_ts$annual_recon*12
 		### Re-sort to obtain time series
@@ -243,7 +243,6 @@ obs_ts <- data.table(obs_ts)
 flow_obs_annual <- obs_ts[,list(annual_sum=sum(flow), annual_mean=mean(flow)),by="water_year"]
 ### Merge back with observed flow
 obs_ts <-  merge(obs_ts,flow_obs_annual, by=c("water_year"), all.x = T)
-	
 
 ################################################
 ### Calculate Monthly Fraction
@@ -271,7 +270,7 @@ null_prop <- data.frame(null_prop)
 null_prop <- null_prop[order(null_prop$month),]
 
 ### Return monthly proportion
-return(null_prop)
+return(list(prop_mean=null_prop, mf_ts=mf_ts))
 
 }
 
