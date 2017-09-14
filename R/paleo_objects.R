@@ -165,14 +165,19 @@ coef.paleo.fit <- function(fit, ...) {
 		coef_mat <-  matrix(rep(1,12),1, 12)
 		rownames(coef_mat) <- "annual_norm" 
 	} else if (fit$method == "apr") {
-		coef_mat <- sapply(fit$reg_model, function(x) coef(x))
+		
+		coef_mat <- sapply(fit$reg_model, function(x){
+			if("elnet" %in% class(x)) {
+				newmat <- c(t(as.matrix(coef(x, s=x$bestTune$lambda)) ))
+				names(newmat) <- rownames(coef(x,s=x$bestTune$lambda))
+			} else {
+				new_mat <- coef(x)
+			}
+		return(newmat) } )
 		coef_mat <- as.matrix(coef_mat)
 	}
 	
 	colnames(coef_mat) <- paste0("M_", seq(1,12))
 	return(coef_mat)
 }
-
-
-
 

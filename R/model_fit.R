@@ -407,25 +407,21 @@ apr_fit <- function(recon_data, reg_eq, regmethod) {
           trControl = Control)
 
 		### Fit the model
-		netFit <- train(obs_norm ~ . , data = pred_and_norm,
-          method = "glmnet",
-          tuneGrid = eGrid,
-          trControl = Control)
+		#netFit <- train(obs_norm ~ . , data = pred_and_norm,
+        #  method = "glmnet",
+        #  tuneGrid = eGrid,
+        #  trControl = Control)
     	
 		### Extract the best tuning parameters
 		my_glmnet_model <- netFit$finalModel
 		
 		### Extract coefficients
-		model_coef <- coef(my_glmnet_model, s = netFit$bestTune$lambda)		
-		model_results <- matrix(model_coef)
-		rownames(model_results) <- dimnames(model_coef)[[1]]
+		#model_coef <- coef(my_glmnet_model, s = netFit$bestTune$lambda)		
+		my_glmnet_model$bestTune <- netFit$bestTune
 	
-		### Combine coefficients to a single matrix
-		if (j == 1) {
-			final_coef <- model_results
-		} else {
-			final_coef <- cbind(final_coef, model_results)
-		}
+		### Save regression model
+		if (j ==1) {reg_model_month <- list()}
+		reg_model_month[[j]] <- my_glmnet_model
 	}
 	
 	### Stop clusters
@@ -490,7 +486,20 @@ apr_reconst <- function(recon_model) {
 	### Loop through months and predict value 
 	for (j in seq(1,12)) {
 		month_test <- monthly_ts$month == j
-		monthly_ts$norm_est[month_test] <- predict(recon_model$reg_model[[j]], monthly_ts[month_test,])
+		
+		### If fitted with elastic net
+		if ("elnet" %in% class(recon_model$reg_model[[j]])){
+			### Extract Lambda
+			s_j <- recon_model$reg_model[[j]]$bestTune$lambda
+			### New X must contain only columns needed as predictors
+			col_test <- names(monthly_ts) %in% recon_model$reg_model[[j]]$xNames
+			newx_j <- as.matrix(monthly_ts[month_test,col_test])
+			### Predict
+			monthly_ts$norm_est[month_test] <- predict(recon_model$reg_model[[j]], s=s_j, newx=newx_j)
+		} else {
+			### Predict if not elastic net
+			monthly_ts$norm_est[month_test] <- predict(recon_model$reg_model[[j]], monthly_ts[month_test,])
+		}
 	}
 	
 	################################################
