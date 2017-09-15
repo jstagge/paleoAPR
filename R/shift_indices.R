@@ -17,7 +17,7 @@
 shift_indices <- function(data, name, lags) {
 	for (j in seq(1,length(lags))) {
 		shift_by <- lags[j]
-		data_temp <- shift(data, shift_by=shift_by)
+		data_temp <- shift_bylag(data, shift_by=shift_by)
 	
 		if (j == 1){
 			data_final <- data_temp

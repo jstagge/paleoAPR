@@ -69,8 +69,7 @@ fit_model <- function(method, regmethod="lm", reconst_data, annual_norm=NULL, mo
 		x$reconst_data$ts <- monthly_ts
 		x$reconst_data$time_scale <- "monthly"
 		
-	} 
-	else if (method == "ap" | method == "apr") {
+	} else if (method == "ap" | method == "apr") {
 		### Check that annual reconstructed timeseries and normalization are from same data
 		expect_that(annual_norm$prefix, is_identical_to(paste0(reconst_data$site_prefix, "_annual")))
 		
@@ -320,7 +319,7 @@ apr_fit <- function(recon_data, reg_eq, regmethod) {
 	vars_lagged_list <- c()
 	
 	### Loop through all combinations to create lagged predictor data
-	### Requires shift function from staggefuncs
+	### Requires shift_bylag function from staggefuncs
 	for (j in seq(1,length(vars_lagged))) {
 		### Calculate lags for variable	
 		name_j <- vars_lagged[[j]][1]
@@ -333,7 +332,7 @@ apr_fit <- function(recon_data, reg_eq, regmethod) {
 		### Loop through all lags and create the lagged predictor dataframe
 		for (k in seq(1, length(lags_j))){
 			lag_k <- lags_j[k]
-			lagged_temp <- shift(as.matrix(base_data), shift_by=lag_k*12)
+			lagged_temp <- shift_bylag(as.matrix(base_data), shift_by=lag_k*12)
 			lagged_temp <- data.frame(lagged_temp)
 			names(lagged_temp) <- paste0(name_j,".",lag_k)
 			if(k == 1) {
