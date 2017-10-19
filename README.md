@@ -1,4 +1,4 @@
-# paleoAPR: Monthly Streamflow Reconstructions Package for R
+# paleoAPR: Monthly streamflow reconstruction package for R
 
 [![DOI](https://zenodo.org/badge/102071023.svg)](https://zenodo.org/badge/latestdoi/102071023)
 
@@ -25,7 +25,7 @@ install_github("jstagge/paleoAPR")
 
 For any description of this package or use of this code, please use the following citation:
 
-* Stagge, J.H. (2017) "paleoAPR: Monthly Streamflow Reconstructions." R Package. DOI: 10.5281/zenodo.889892.
+* Stagge, J.H. (2017) "paleoAPR: Monthly streamflow reconstruction package for R." R package version 1.0. doi: 10.5281/zenodo.889892.
 
 ## Authors
 
